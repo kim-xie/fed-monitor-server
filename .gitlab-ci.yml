@@ -22,9 +22,17 @@ build-job:       # This job runs in the build stage, which runs first.
   script:
     - echo "Compiling the code..."
     - echo "Compile complete."
+  tags:
+    - "node"
+  only:
+    - "master"
 
 deploy-job:      # This job runs in the deploy stage.
   stage: deploy  # It only runs when *both* jobs in the test stage complete successfully.
   script:
     - echo "Deploying application..."
     - echo "Application successfully deployed."
+  tags:
+    - "node"
+  only:
+    - "master"
