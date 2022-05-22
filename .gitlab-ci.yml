@@ -23,7 +23,7 @@ build-job:       # This job runs in the build stage, which runs first.
     - echo "Compiling the code..."
     - echo "Compile complete."
   tags:
-    - "node"
+    - "servernode"
   only:
     - "master"
 
@@ -33,6 +33,6 @@ deploy-job:      # This job runs in the deploy stage.
     - echo "Deploying application..."
     - echo "Application successfully deployed."
   tags:
-    - "node"
+    - "servernode"
   only:
     - "master"
