@@ -20,18 +20,29 @@ stages:          # List of stages for jobs, and their order of execution
 build-job:       # This job runs in the build stage, which runs first.
   stage: build
   script:
-    - echo "Compiling the code..."
-    - echo "Compile complete."
+    - cd ${CI_PROJECT_DIR}
+    - echo "start install..."
+    - npm install
+    - echo "install done"
+    - echo "start building..."
+    - npm run build
+    - echo "build done"
   tags:
     - "servernode"
   only:
     - "master"
+  artifacts:   # 把 dist 的内容传递给下一个阶
+    paths:
+        - dist/
 
 deploy-job:      # This job runs in the deploy stage.
   stage: deploy  # It only runs when *both* jobs in the test stage complete successfully.
   script:
-    - echo "Deploying application..."
-    - echo "Application successfully deployed."
+    - echo "deploy start..."
+    - rm -fr /www/wwwroot/node/dist/*
+    - cp -rf ${CI_PROJECT_DIR}/dist/* /www/wwwroot/node/dist/
+    - echo "deploy done"
+
   tags:
     - "servernode"
   only:
