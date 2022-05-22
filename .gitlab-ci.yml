@@ -23,11 +23,12 @@ build-job:       # This job runs in the build stage, which runs first.
     - cd ${CI_PROJECT_DIR}
     - node -v
     - npm -v
+    - npm i -g yarn
     - echo "start install..."
-    - npm install
+    - yarn
     - echo "install done"
     - echo "start building..."
-    - npm run build
+    - yarn build
     - echo "build done"
   tags:
     - "servernode"
