@@ -21,6 +21,8 @@ build-job:       # This job runs in the build stage, which runs first.
   stage: build
   script:
     - cd ${CI_PROJECT_DIR}
+    - node -v
+    - npm -v
     - echo "start install..."
     - npm install
     - echo "install done"
