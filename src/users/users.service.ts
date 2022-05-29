@@ -35,11 +35,22 @@ export class UsersService {
   }
 
   async findAll(): Promise<User[]> {
-    return this.usersRepository.find();
+    return this.usersRepository.find({
+      select: ['name', 'nickName', 'realName', 'mobile', 'isActive'],
+    });
   }
 
   findOne(name: string): Promise<User> {
-    return this.usersRepository.findOne({ where: { name } });
+    return this.usersRepository.findOne({
+      select: ['name', 'nickName', 'realName', 'mobile', 'isActive'],
+      where: { name },
+    });
+  }
+
+  matchOne(name: string): Promise<User> {
+    return this.usersRepository.findOne({
+      where: { name },
+    });
   }
 
   async remove(id: string): Promise<void> {
