@@ -8,15 +8,33 @@ export class User {
 
   @Column()
   @ApiProperty({
-    description: 'The first name',
+    description: 'Login name',
   })
-  firstName: string;
+  name: string;
 
   @Column()
   @ApiProperty({
-    description: 'The first name',
+    description: 'Login name',
   })
-  lastName: string;
+  password: string;
+
+  @Column()
+  @ApiProperty({
+    description: 'The real name',
+  })
+  realName: string;
+
+  @Column()
+  @ApiProperty({
+    description: 'The nick name',
+  })
+  nickName: string;
+
+  @Column()
+  @ApiProperty({
+    description: 'The mobile number',
+  })
+  mobile: string;
 
   @Column({ default: true })
   @ApiProperty({

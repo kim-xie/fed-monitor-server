@@ -1,7 +1,9 @@
 import { Injectable, NotAcceptableException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateUserDto } from './dto/create-user.dto';
+
+import { RegisterUserDto } from './dto/register-user.dto';
+
 import { User } from './user.entity';
 
 @Injectable()
@@ -11,13 +13,23 @@ export class UsersService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    if (await this.usersRepository.findOne({ where: createUserDto })) {
+  async register(registerUserDto: RegisterUserDto): Promise<User> {
+    if (
+      await this.usersRepository.findOne({
+        where: { name: registerUserDto.name },
+      })
+    ) {
       throw new NotAcceptableException('User already created.');
     }
+    if (registerUserDto.password !== registerUserDto.confirmPassword) {
+      throw new NotAcceptableException('Password do not match.');
+    }
     const user = new User();
-    user.firstName = createUserDto.firstName;
-    user.lastName = createUserDto.lastName;
+    user.name = registerUserDto.name;
+    user.mobile = registerUserDto.mobile;
+    user.realName = registerUserDto.realName;
+    user.nickName = registerUserDto.nickName;
+    user.password = registerUserDto.password;
 
     return this.usersRepository.save(user);
   }
@@ -26,8 +38,8 @@ export class UsersService {
     return this.usersRepository.find();
   }
 
-  findOne(id: number): Promise<User> {
-    return this.usersRepository.findOne({ where: { id } });
+  findOne(name: string): Promise<User> {
+    return this.usersRepository.findOne({ where: { name } });
   }
 
   async remove(id: string): Promise<void> {
