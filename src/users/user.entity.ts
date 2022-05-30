@@ -6,13 +6,17 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({
+    // unique: true,
+  })
   @ApiProperty({
     description: 'Login name',
   })
   name: string;
 
-  @Column()
+  @Column({
+    // select: false,
+  })
   @ApiProperty({
     description: 'Login name',
   })

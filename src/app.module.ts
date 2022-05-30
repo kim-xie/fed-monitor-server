@@ -21,6 +21,7 @@ import { AppService } from './app.service';
       database: 'test',
       autoLoadEntities: true,
       synchronize: true,
+      logging: 'all',
     }),
     UsersModule,
     AuthModule,
