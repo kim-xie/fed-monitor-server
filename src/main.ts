@@ -3,14 +3,12 @@ import { Logger } from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
-import { WinstonModule } from 'nest-winston';
-
 import { AppModule } from './app.module';
 
 import { HttpExceptionFilter } from './common/filters/http-exception';
+import { AllExceptionsFilter } from './common/filters/all-exception';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
-
-import LoggerConfig from './common/configs/logger.config';
+import { logger } from './common/middlewares/logger-middleware';
 
 function useSwagger(app: INestApplication) {
   const options = new DocumentBuilder()
@@ -25,13 +23,13 @@ function useSwagger(app: INestApplication) {
 }
 
 async function bootstrap() {
-  const logger = WinstonModule.createLogger(LoggerConfig);
   // 创建实例
   const app = await NestFactory.create(AppModule, { logger });
 
   // 定义全局拦截器
-  app.useGlobalInterceptors(new TransformInterceptor());
+  app.useGlobalInterceptors(new TransformInterceptor(app.get(Logger)));
   // 使用全局过滤器
+  app.useGlobalFilters(new AllExceptionsFilter(app.get(Logger)));
   app.useGlobalFilters(new HttpExceptionFilter(app.get(Logger)));
   // 使用swagger生成API文档
   useSwagger(app);
