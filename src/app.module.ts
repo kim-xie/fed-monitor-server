@@ -1,4 +1,4 @@
-import { Logger, Module, MiddlewareConsumer } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthModule } from './auth/auth.module';
@@ -7,11 +7,12 @@ import { TrackingModule } from './tracking/tracking.module';
 
 import { AppController } from './app.controller';
 import { UsersController } from './users/users.controller';
+import { TrackingController } from './tracking/tracking.controller';
 
 import { AppService } from './app.service';
 
 import TypeOrmConfig from './common/configs/typeorm.config';
-import { LoggerMiddleware } from './common/middlewares/logger-middleware';
+// import { LoggerMiddleware } from './common/middlewares/logger-middleware';
 
 @Module({
   imports: [
@@ -20,7 +21,7 @@ import { LoggerMiddleware } from './common/middlewares/logger-middleware';
     AuthModule,
     TrackingModule,
   ],
-  controllers: [AppController, UsersController],
+  controllers: [AppController, UsersController, TrackingController],
   providers: [AppService, Logger],
 })
 export class AppModule {

@@ -8,6 +8,7 @@ const configs: TypeOrmModuleOptions = {
   password: 'P@ssw0rd',
   database: 'test',
   autoLoadEntities: true,
+  entities: ['dist/**/*.entity{.ts,.js}'],
   synchronize: true,
   logger: 'file',
   logging: 'all',
