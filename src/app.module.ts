@@ -1,26 +1,31 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { TrackingModule } from './tracking/tracking.module';
 
 import { AppController } from './app.controller';
+import { UsersController } from './users/users.controller';
+import { TrackingController } from './tracking/tracking.controller';
+
 import { AppService } from './app.service';
+
+import TypeOrmConfig from './common/configs/typeorm.config';
+// import { LoggerMiddleware } from './common/middlewares/logger-middleware';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: '49.234.134.123',
-      port: 3306,
-      username: 'root',
-      password: 'P@ssw0rd',
-      database: 'test',
-      autoLoadEntities: true,
-      synchronize: true,
-    }),
+    TypeOrmModule.forRoot(TypeOrmConfig),
     UsersModule,
+    AuthModule,
+    TrackingModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, UsersController, TrackingController],
+  providers: [AppService, Logger],
 })
-export class AppModule {}
+export class AppModule {
+  // configure(consumer: MiddlewareConsumer) {
+  //   consumer.apply(LoggerMiddleware).forRoutes('*');
+  // }
+}

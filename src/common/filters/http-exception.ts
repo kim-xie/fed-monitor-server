@@ -7,6 +7,8 @@ import {
   Logger,
 } from '@nestjs/common';
 
+import * as StackTrace from 'stacktrace-js';
+
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
   // 如果有日志服务，可以在constructor,中挂载logger处理函数
@@ -34,15 +36,29 @@ export class HttpExceptionFilter implements ExceptionFilter {
       code: -1,
     };
     // 将异常记录到logger中
-    this.logger.error(
-      `${request.method} ${request.url} query:${JSON.stringify(
-        request.query,
-      )} params:${JSON.stringify(request.params)} body:${JSON.stringify(
-        request.body,
-      )}`,
-      JSON.stringify(errorResponse),
-      'HttpExceptionFilter',
-    );
+    const msg = `${request.method} ${request.originalUrl} ${
+      request.ip
+    } query:${JSON.stringify(request.query)} params:${JSON.stringify(
+      request.params,
+    )} body:${JSON.stringify(
+      request.body,
+    )} code:${status} ${exception.toString()}`;
+    this.logger.error(msg);
+    // StackTrace.get().then((stack) => {
+    //   // 将异常记录到logger中
+    //   const msg = `${request.method} ${request.originalUrl} ${
+    //     request.ip
+    //   } query:${JSON.stringify(request.query)} params:${JSON.stringify(
+    //     request.params,
+    //   )} body:${JSON.stringify(
+    //     request.body,
+    //   )} code:${status} ${exception.toString()}`;
+    //   this.logger.error(
+    //     msg,
+    //     stack.map((f) => f.toString()),
+    //   );
+    // });
+
     // 设置返回的状态码， 请求头，发送错误信息
     response.status(status);
     response.header('Content-Type', 'application/json; charset=utf-8');

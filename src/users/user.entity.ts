@@ -6,17 +6,39 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  @ApiProperty({
-    description: 'The first name',
+  @Column({
+    // unique: true,
   })
-  firstName: string;
+  @ApiProperty({
+    description: 'Login name',
+  })
+  name: string;
+
+  @Column({
+    // select: false,
+  })
+  @ApiProperty({
+    description: 'Login name',
+  })
+  password: string;
 
   @Column()
   @ApiProperty({
-    description: 'The first name',
+    description: 'The real name',
   })
-  lastName: string;
+  realName: string;
+
+  @Column()
+  @ApiProperty({
+    description: 'The nick name',
+  })
+  nickName: string;
+
+  @Column()
+  @ApiProperty({
+    description: 'The mobile number',
+  })
+  mobile: string;
 
   @Column({ default: true })
   @ApiProperty({

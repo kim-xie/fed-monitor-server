@@ -7,6 +7,9 @@ import {
   HttpStatus,
   Param,
   Post,
+  NotAcceptableException,
+  NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -14,29 +17,56 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
-import { CreateUserDto } from './dto/create-user.dto';
+import { RegisterUserDto } from './dto/register-user.dto';
+import { UserLoginDto } from './dto/login-user.dto';
 
 import { User } from './user.entity';
 import { UsersService } from './users.service';
 
-import { ParseIntPipe } from '../common/pipes/parse-int.pipe';
+import { AuthService } from '../auth/auth.service';
+
+// import { ParseIntPipe } from '../common/pipes/parse-int.pipe';
 
 @ApiBearerAuth()
-@ApiTags('users')
-@Controller('users')
+@ApiTags('user')
+@Controller('user')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
-  @Post('add')
-  @ApiOperation({ summary: 'Create user' })
+  @Post('login')
+  @ApiOperation({ summary: 'login' })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @HttpCode(HttpStatus.OK)
-  create(@Body() createUserDto: CreateUserDto): Promise<User> {
-    return this.usersService.create(createUserDto);
+  async login(@Body() loginParmas: UserLoginDto) {
+    const { user, code } = await this.authService.validateUser(
+      loginParmas.name,
+      loginParmas.password,
+    );
+    switch (code) {
+      case 1:
+        return this.authService.certificate(user);
+      case 2:
+        throw new NotAcceptableException('Name or password is incorrect.');
+      default:
+        throw new NotFoundException('User cannot found.');
+    }
   }
 
-  @Get()
+  @Post('register')
+  @ApiOperation({ summary: 'Register user' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
+  @HttpCode(HttpStatus.OK)
+  create(@Body() registerUserDto: RegisterUserDto): Promise<User> {
+    return this.usersService.register(registerUserDto);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('/all')
   @ApiOperation({ summary: 'Find all users' })
   @ApiResponse({
     status: 200,
@@ -48,18 +78,20 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Find user by id' })
+  @UseGuards(AuthGuard('jwt'))
+  @Get(':name')
+  @ApiOperation({ summary: 'Find user' })
   @ApiResponse({
     status: 200,
-    description: 'The found user',
+    description: 'The founded user.',
     type: User,
   })
   @HttpCode(HttpStatus.OK)
-  findOne(@Param('id', new ParseIntPipe()) id: number): Promise<User> {
-    return this.usersService.findOne(id);
+  findOne(@Param('name') name: string): Promise<User> {
+    return this.usersService.findOne(name);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   @ApiOperation({ summary: 'Remove user by id' })
   @ApiResponse({
