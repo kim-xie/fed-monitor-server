@@ -30,7 +30,7 @@ build-job:       # This job runs in the build stage, which runs first.
     - yarn build
     - echo "build done"
   tags:
-    - "servernode"
+    - "default"
   only:
     - "master"
   artifacts:   # 把 dist 的内容传递给下一个阶
@@ -49,6 +49,6 @@ deploy-job:      # This job runs in the deploy stage.
     - echo "deploy done"
 
   tags:
-    - "servernode"
+    - "default"
   only:
     - "master"
