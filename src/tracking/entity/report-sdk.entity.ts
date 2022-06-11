@@ -4,7 +4,7 @@ import { Report } from './report.entity';
 
 @Entity()
 export class ReportSdk {
-  @PrimaryGeneratedColumn('increment', { type: 'int' })
+  @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ default: '' })

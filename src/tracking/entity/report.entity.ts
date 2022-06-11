@@ -1,10 +1,12 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
+  Timestamp,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -14,21 +16,21 @@ import { ReportSdk } from './report-sdk.entity';
 
 @Entity()
 export class Report {
-  @PrimaryGeneratedColumn('increment', { type: 'int' })
+  @PrimaryGeneratedColumn()
   id: number;
 
   @OneToMany(() => ReportBreadcrumb, (breadcrumb) => breadcrumb.report)
-  // @JoinColumn({ name: 'id' })
+  @JoinColumn()
   @ApiProperty()
   breadcrumb: ReportBreadcrumb[];
 
   @OneToOne(() => ReportData)
-  // @JoinColumn({ name: 'id' })
+  @JoinColumn()
   @ApiProperty()
   data: ReportData;
 
   @OneToMany(() => ReportSdk, (sdk) => sdk.report)
-  // @JoinColumn({ name: 'id' })
+  @JoinColumn()
   @ApiProperty()
   sdk: ReportSdk[];
 
@@ -44,16 +46,11 @@ export class Report {
   @ApiProperty()
   traceId: string;
 
-  @Column({
-    readonly: true,
-    type: 'timestamp',
-    // default: () => 'CURRENT_TIMESTAMP',
-    precision: 6,
-  })
+  @CreateDateColumn()
   @ApiProperty({
     description: '创建时间戳',
   })
-  timestamp: Date;
+  timestamp: Timestamp;
 
   @Column({ default: '' })
   @ApiProperty({

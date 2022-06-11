@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 @Entity()
 export class ReportData {
-  @PrimaryGeneratedColumn('increment', { type: 'int' })
+  @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
@@ -18,11 +18,17 @@ export class ReportData {
   @ApiProperty()
   title: string;
 
-  @Column()
+  @Column({
+    type: 'varchar',
+    length: 12,
+  })
   @ApiProperty()
   category: string;
 
-  @Column()
+  @Column({
+    type: 'varchar',
+    length: 8,
+  })
   @ApiProperty()
   level: string;
 
