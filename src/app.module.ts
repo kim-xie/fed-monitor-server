@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TrackingModule } from './tracking/tracking.module';
+import { EsModule } from './lib/elasticsearch/elasticsearch.module';
+import { EsDemoModule } from './demo/es/es.module';
 
 import { AppController } from './app.controller';
 import { UsersController } from './users/users.controller';
@@ -20,6 +22,8 @@ import TypeOrmConfig from './common/configs/typeorm.config';
     UsersModule,
     AuthModule,
     TrackingModule,
+    EsModule,
+    EsDemoModule,
   ],
   controllers: [AppController, UsersController, TrackingController],
   providers: [AppService, Logger],
