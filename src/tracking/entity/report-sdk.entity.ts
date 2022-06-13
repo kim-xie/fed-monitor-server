@@ -26,5 +26,6 @@ export class ReportSdk {
     (report) => report.breadcrumb,
     // { cascade: true },
   )
+  @JoinColumn()
   report: Report;
 }

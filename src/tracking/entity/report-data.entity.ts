@@ -6,15 +6,15 @@ export class ReportData {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ length: 8 })
   @ApiProperty()
   type: string;
 
-  @Column()
+  @Column({ length: 255 })
   @ApiProperty()
   url: string;
 
-  @Column()
+  @Column({ length: 32 })
   @ApiProperty()
   title: string;
 

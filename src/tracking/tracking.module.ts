@@ -18,16 +18,16 @@ import { TrackingService } from './tracking.service';
   imports: [
     TypeOrmModule.forFeature([
       Report,
-      ReportBreadcrumb,
-      ReportData,
       ReportSdk,
-      Browser,
+      ReportData,
+      ReportBreadcrumb,
       Device,
+      Browser,
       OperationSystem,
     ]),
   ],
   providers: [TrackingService],
   // controllers: [TrackingController],
-  exports: [TypeOrmModule, TrackingService],
+  exports: [TrackingService],
 })
 export class TrackingModule {}

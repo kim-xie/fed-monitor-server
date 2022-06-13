@@ -31,15 +31,15 @@ export class ReportDto {
   @ApiProperty()
   ip: string;
 
-  @IsOptional()
+  // @IsOptional()
   @ApiProperty()
-  browser: BrowserDto;
+  browser: string;
 
-  @IsOptional()
+  // @IsOptional()
   @ApiProperty()
-  device: DeviceDto;
+  device: string;
 
-  @IsOptional()
+  // @IsOptional()
   @ApiProperty()
-  os: OSDto;
+  os: string;
 }

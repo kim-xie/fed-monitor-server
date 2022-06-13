@@ -24,7 +24,7 @@ export class ReportBreadcrumb {
   @ApiProperty()
   category: string;
 
-  @Column({ type: 'json' })
+  @Column({ type: 'simple-json' })
   @ApiProperty()
   data: string | Record<string, any>;
 
@@ -47,5 +47,6 @@ export class ReportBreadcrumb {
     (report) => report.breadcrumb,
     // { cascade: true },
   )
+  @JoinColumn()
   report: Report;
 }

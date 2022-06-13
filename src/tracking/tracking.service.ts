@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { Connection, Repository } from 'typeorm';
+import { Connection, EntityManager, Repository } from 'typeorm';
 
 import { ReportDto } from './dto/report.dto';
 import { ReportBreadcrumbDto } from './dto/report-breadcrumb.dto';
@@ -16,17 +16,11 @@ import { Browser } from './entity/browser.entity';
 import { Device } from './entity/device.entity';
 import { OperationSystem } from './entity/os.entity';
 
-function setProperty(target: Record<string, any>, origin: Record<string, any>) {
-  Object.entries(origin).forEach(([k, v]) => {
-    if (k in target) target[k] = v;
-  });
-}
-
 @Injectable()
 export class TrackingService {
   constructor(
-    // @InjectRepository(Report)
-    // private readonly reportRepository: Repository<Report>,
+    @InjectRepository(Report)
+    private readonly reportRepository: Repository<Report>,
     // @InjectRepository(ReportBreadcrumb)
     // private readonly reportBreadcrumbRepository: Repository<ReportBreadcrumb>,
     // @InjectRepository(ReportData)
@@ -43,79 +37,125 @@ export class TrackingService {
   ) {}
 
   async report(createReportDto: ReportDto): Promise<any> {
-    const breadcrumb = await Promise.all(
-      createReportDto.breadcrumb.map((item) => this.saveBreadcrumb(item)),
-    );
-    const data = await this.saveData(createReportDto.data);
-    const sdk = await Promise.all(
-      createReportDto.sdk.map((item) => this.saveSdk(item)),
-    );
-    const browser = await this.preloadBrowserByContent(createReportDto.browser);
-    const device = await this.preloadDeviceByContent(createReportDto.device);
-    const os = await this.preloadOSByContent(createReportDto.os);
+    // this.connection.transaction((manager) => {
 
-    const report = Object.assign(new Report(), createReportDto, {
-      breadcrumb,
-      data,
-      sdk,
-      browser,
-      device,
-      os,
-    });
-    return this.connection.manager.save(report);
+    // });
+    const runner = this.connection.createQueryRunner();
+    await runner.connect();
+    await runner.startTransaction();
+
+    try {
+      const breadcrumb = await Promise.all(
+        createReportDto.breadcrumb.map((item) =>
+          this.saveBreadcrumb(item, runner.manager),
+        ),
+      );
+      const data = await this.saveData(createReportDto.data, runner.manager);
+      const sdk = await Promise.all(
+        createReportDto.sdk.map((item) => this.saveSdk(item, runner.manager)),
+      );
+      const browser = await this.preloadBrowserByContent(
+        createReportDto.browser,
+        runner.manager,
+      );
+      const device = await this.preloadDeviceByContent(
+        createReportDto.device,
+        runner.manager,
+      );
+      const os = await this.preloadOSByContent(
+        createReportDto.os,
+        runner.manager,
+      );
+
+      const report = Object.assign(new Report(), createReportDto, {
+        breadcrumb,
+        data,
+        sdk,
+        browser,
+        device,
+        os,
+      });
+      await runner.manager.save(report);
+      await runner.commitTransaction();
+    } catch (error) {
+      await runner.rollbackTransaction();
+      throw new SyntaxError(error);
+    }
   }
 
-  private async saveBreadcrumb(createBreadbrumbDto: ReportBreadcrumbDto) {
+  async findAll(): Promise<any> {
+    return this.reportRepository.find({
+      relations: ['breadcrumb', 'data', 'sdk', 'device', 'browser', 'os'],
+    });
+  }
+
+  async findOne(traceId: string): Promise<any> {
+    return this.reportRepository.findOne({
+      relations: ['breadcrumb', 'data', 'sdk', 'device', 'browser', 'os'],
+      where: { traceId },
+    });
+  }
+
+  private async saveBreadcrumb(
+    createBreadbrumbDto: ReportBreadcrumbDto,
+    manager: EntityManager,
+  ) {
     const breadcrumb = new ReportBreadcrumb();
     Object.assign(breadcrumb, createBreadbrumbDto);
-    await this.connection.manager.save(breadcrumb);
+    await manager.save(breadcrumb);
     return breadcrumb;
   }
 
-  private async saveData(createDataDto: ReportDataDto) {
+  private async saveData(createDataDto: ReportDataDto, manager: EntityManager) {
     const data = new ReportData();
     Object.assign(data, createDataDto);
-    await this.connection.manager.save(data);
+    await manager.save(data);
     return data;
   }
 
-  private async saveSdk(createSdkDto: ReportSdkDto) {
+  private async saveSdk(createSdkDto: ReportSdkDto, manager: EntityManager) {
     const sdk = new ReportSdk();
     Object.assign(sdk, createSdkDto);
-    await this.connection.manager.save(sdk);
+    await manager.save(sdk);
     return sdk;
   }
 
-  private async preloadBrowserByContent(dto: { content: string }) {
-    let browser = await this.connection.manager.findOne(Browser, {
-      where: dto,
+  private async preloadBrowserByContent(
+    content: string,
+    manager: EntityManager,
+  ) {
+    let browser = await manager.findOne(Browser, {
+      where: { content },
     });
     if (!browser) {
       browser = new Browser();
-      browser.content = dto.content;
-      await this.connection.manager.save(browser);
+      browser.content = content;
+      await manager.save(browser);
     }
     return browser;
   }
 
-  private async preloadDeviceByContent(dto: { content: string }) {
-    let device = await this.connection.manager.findOne(Device, { where: dto });
+  private async preloadDeviceByContent(
+    content: string,
+    manager: EntityManager,
+  ) {
+    let device = await manager.findOne(Device, { where: { content } });
     if (!device) {
       device = new Device();
-      device.content = dto.content;
-      await this.connection.manager.save(device);
+      device.content = content;
+      await manager.save(device);
     }
     return device;
   }
 
-  private async preloadOSByContent(dto: { content: string }) {
-    let os = await this.connection.manager.findOne(OperationSystem, {
-      where: dto,
+  private async preloadOSByContent(content: string, manager: EntityManager) {
+    let os = await manager.findOne(OperationSystem, {
+      where: { content },
     });
     if (!os) {
       os = new OperationSystem();
-      os.content = dto.content;
-      await this.connection.manager.save(os);
+      os.content = content;
+      await manager.save(os);
     }
     return os;
   }
