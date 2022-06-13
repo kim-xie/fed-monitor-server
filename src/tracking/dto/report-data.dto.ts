@@ -17,5 +17,5 @@ export class ReportDataDto {
   level: string;
 
   @ApiProperty()
-  extends: JSON;
+  extends: Record<string, any>;
 }

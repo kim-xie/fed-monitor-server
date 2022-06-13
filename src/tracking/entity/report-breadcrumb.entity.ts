@@ -24,15 +24,13 @@ export class ReportBreadcrumb {
   @ApiProperty()
   category: string;
 
-  @Column()
+  @Column({ type: 'json' })
   @ApiProperty()
-  data: string;
+  data: string | Record<string, any>;
 
   @CreateDateColumn()
-  @ApiProperty({
-    description: '创建时间戳',
-  })
-  time: Timestamp;
+  @ApiProperty()
+  timestamp: Timestamp;
 
   @Column()
   @ApiProperty({ default: '' })
@@ -44,6 +42,10 @@ export class ReportBreadcrumb {
   // @ApiProperty({ default: '' })
   // reportId: number;
 
-  @ManyToOne(() => Report, (report) => report.breadcrumb)
+  @ManyToOne(
+    () => Report,
+    (report) => report.breadcrumb,
+    // { cascade: true },
+  )
   report: Report;
 }

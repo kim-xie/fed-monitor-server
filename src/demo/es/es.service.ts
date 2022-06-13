@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { EsService } from 'src/lib/elasticsearch/elasticsearch.service';
+import { EsService } from '../../lib/elasticsearch/elasticsearch.service';
 
 @Injectable()
 export class EsDemoService {

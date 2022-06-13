@@ -5,17 +5,17 @@ import { IsOptional } from 'class-validator';
 import { ReportBreadcrumbDto } from './report-breadcrumb.dto';
 import { ReportDataDto } from './report-data.dto';
 import { ReportSdkDto } from './report-sdk.dto';
+import { BrowserDto } from './borwser.dto';
+import { DeviceDto } from './device.dto';
+import { OSDto } from './os.dto';
 
 export class ReportDto {
-  @IsOptional()
   @ApiProperty()
   breadcrumb: ReportBreadcrumbDto[];
 
-  @IsOptional()
   @ApiProperty()
   data: ReportDataDto;
 
-  @IsOptional()
   @ApiProperty()
   sdk: ReportSdkDto[];
 
@@ -27,4 +27,19 @@ export class ReportDto {
 
   @ApiProperty()
   traceId: string;
+
+  @ApiProperty()
+  ip: string;
+
+  @IsOptional()
+  @ApiProperty()
+  browser: BrowserDto;
+
+  @IsOptional()
+  @ApiProperty()
+  device: DeviceDto;
+
+  @IsOptional()
+  @ApiProperty()
+  os: OSDto;
 }

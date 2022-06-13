@@ -1,4 +1,10 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Report } from './report.entity';
 
@@ -15,6 +21,10 @@ export class ReportSdk {
   @ApiProperty()
   version: string;
 
-  @ManyToOne(() => Report, (report) => report.breadcrumb)
+  @ManyToOne(
+    () => Report,
+    (report) => report.breadcrumb,
+    // { cascade: true },
+  )
   report: Report;
 }

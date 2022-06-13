@@ -32,9 +32,9 @@ export class ReportData {
   @ApiProperty()
   level: string;
 
-  @Column()
+  @Column({ type: 'json' })
   @ApiProperty({
     description: '扩展字段',
   })
-  extends: string;
+  extends: Record<string, any>;
 }
