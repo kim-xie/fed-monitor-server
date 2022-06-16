@@ -16,7 +16,7 @@ import { Browser } from './entity/browser.entity';
 import { Device } from './entity/device.entity';
 import { OperationSystem } from './entity/os.entity';
 
-function filter({ id, ...params }: Record<string, any>) {
+function filter({ id, ...params }: Record<string, any> = {}) {
   return params;
 }
 
@@ -109,13 +109,21 @@ export class TrackingService {
   }
 
   async findOne(traceId: string): Promise<any> {
-    return filter(
-      this.reportRepository.findOne({
-        relations: ['breadcrumb', 'data', 'sdk', 'device', 'browser', 'os'],
-        loadRelationIds: false,
-        where: { traceId },
-      }),
-    );
+    const { device, browser, os, breadcrumb, data, sdk, ...rest } = await this.reportRepository.findOne({
+      relations: ['breadcrumb', 'data', 'sdk', 'device', 'browser', 'os'],
+      loadRelationIds: false,
+      where: { traceId },
+    });
+
+    return {
+      ...filter(rest),
+      device: device?.content || '',
+      browser: browser?.content || '',
+      os: os?.content || '',
+      breadcrumb: breadcrumb?.map(filter),
+      sdk: sdk?.map(filter),
+      data: filter(data),
+    };
   }
 
   private async saveBreadcrumb(
