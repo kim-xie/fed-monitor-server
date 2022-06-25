@@ -109,11 +109,12 @@ export class TrackingService {
   }
 
   async findOne(traceId: string): Promise<any> {
-    const { device, browser, os, breadcrumb, data, sdk, ...rest } = await this.reportRepository.findOne({
-      relations: ['breadcrumb', 'data', 'sdk', 'device', 'browser', 'os'],
-      loadRelationIds: false,
-      where: { traceId },
-    });
+    const { device, browser, os, breadcrumb, data, sdk, ...rest } =
+      await this.reportRepository.findOne({
+        relations: ['breadcrumb', 'data', 'sdk', 'device', 'browser', 'os'],
+        loadRelationIds: false,
+        where: { traceId },
+      });
 
     return {
       ...filter(rest),
