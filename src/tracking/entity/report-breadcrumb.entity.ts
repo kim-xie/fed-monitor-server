@@ -5,6 +5,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Timestamp,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -12,7 +13,7 @@ import { Report } from './report.entity';
 
 @Entity()
 export class ReportBreadcrumb {
-  @PrimaryGeneratedColumn('increment', { type: 'int' })
+  @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
@@ -23,19 +24,13 @@ export class ReportBreadcrumb {
   @ApiProperty()
   category: string;
 
-  @Column()
+  @Column({ type: 'simple-json' })
   @ApiProperty()
-  data: string;
+  data: string | Record<string, any>;
 
-  @CreateDateColumn({
-    readonly: true,
-    // default: () => 'CURRENT_TIMESTAMP',
-  })
-  @ApiProperty({
-    description: '创建时间戳',
-    default: Date.now(),
-  })
-  time: Date;
+  @CreateDateColumn()
+  @ApiProperty()
+  timestamp: Timestamp;
 
   @Column()
   @ApiProperty({ default: '' })
@@ -47,6 +42,11 @@ export class ReportBreadcrumb {
   // @ApiProperty({ default: '' })
   // reportId: number;
 
-  @ManyToOne(() => Report, (report) => report.breadcrumb)
+  @ManyToOne(
+    () => Report,
+    (report) => report.breadcrumb,
+    // { cascade: true },
+  )
+  @JoinColumn()
   report: Report;
 }

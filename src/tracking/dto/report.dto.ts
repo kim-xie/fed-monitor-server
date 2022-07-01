@@ -22,4 +22,16 @@ export class ReportDto {
 
   @ApiProperty()
   traceId: string;
+
+  @ApiProperty()
+  ip: string;
+
+  @ApiProperty()
+  browser: string;
+
+  @ApiProperty()
+  device: string;
+
+  @ApiProperty()
+  os: string;
 }

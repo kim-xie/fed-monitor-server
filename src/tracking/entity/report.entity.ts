@@ -1,10 +1,12 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
+  Timestamp,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -12,71 +14,65 @@ import { ReportBreadcrumb } from './report-breadcrumb.entity';
 import { ReportData } from './report-data.entity';
 import { ReportSdk } from './report-sdk.entity';
 
+import { Browser } from './browser.entity';
+import { Device } from './device.entity';
+import { OperationSystem } from './os.entity';
+
 @Entity()
 export class Report {
-  @PrimaryGeneratedColumn('increment', { type: 'int' })
+  @PrimaryGeneratedColumn()
   id: number;
 
-  @OneToMany(() => ReportBreadcrumb, (breadcrumb) => breadcrumb.report)
-  // @JoinColumn({ name: 'id' })
+  @OneToMany(() => ReportBreadcrumb, (breadcrumb) => breadcrumb.report, {
+    cascade: true,
+  })
   @ApiProperty()
   breadcrumb: ReportBreadcrumb[];
 
-  @OneToOne(() => ReportData)
-  // @JoinColumn({ name: 'id' })
-  @ApiProperty()
-  data: ReportData;
-
-  @OneToMany(() => ReportSdk, (sdk) => sdk.report)
-  // @JoinColumn({ name: 'id' })
+  @OneToMany(() => ReportSdk, (sdk) => sdk.report, { cascade: true })
   @ApiProperty()
   sdk: ReportSdk[];
 
-  @Column()
+  @Column({ default: '', length: 16 })
+  @ApiProperty({ description: 'ip' })
+  ip: string;
+
+  @Column({ default: '', length: 64 })
   @ApiProperty()
   apiKey: string;
 
-  @Column()
+  @Column({ default: '', length: 16 })
   @ApiProperty()
   apiEnv: string;
 
-  @Column({ name: 'trace_id' })
+  @Column({ default: '', length: 64 })
   @ApiProperty()
   traceId: string;
 
-  @Column({
-    readonly: true,
-    type: 'timestamp',
-    // default: () => 'CURRENT_TIMESTAMP',
-    precision: 6,
-  })
-  @ApiProperty({
-    description: '创建时间戳',
-  })
-  timestamp: Date;
+  @CreateDateColumn()
+  @ApiProperty()
+  timestamp: Timestamp;
 
-  @Column({ default: '' })
-  @ApiProperty({
-    description: '设备信息',
-  })
-  device: string;
+  @OneToOne(() => ReportData)
+  @JoinColumn()
+  @ApiProperty()
+  data: ReportData;
 
-  @Column({ default: '' })
-  @ApiProperty({
-    description: '操作系统信息',
-  })
-  os: string;
+  @OneToOne(() => Device)
+  @JoinColumn()
+  // @Column({ name: 'device_id' })
+  @ApiProperty({ description: '设备信息' })
+  device: Device;
 
-  @Column({ default: '' })
-  @ApiProperty({
-    description: '浏览器信息',
-  })
-  browser: string;
+  @OneToOne(() => OperationSystem)
+  @JoinColumn()
+  // @Column({ name: 'os_id' })
+  @ApiProperty({ description: '操作系统信息' })
+  os: OperationSystem;
 
-  @Column({ default: '' })
-  @ApiProperty({
-    description: 'ip',
-    default: '',
-  })
-  ip: string;
+  @OneToOne(() => Browser)
+  @JoinColumn()
+  // @Column({ name: 'browser_id' })
+  @ApiProperty({ description: '浏览器信息' })
+  browser: Browser;
 }

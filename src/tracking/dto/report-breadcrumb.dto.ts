@@ -5,13 +5,10 @@ export class ReportBreadcrumbDto {
   type: string;
 
   @ApiProperty()
-  data: string | JSON;
+  data: string | Record<string, any>;
 
   @ApiProperty()
-  category?: string;
-
-  @ApiProperty()
-  time?: number;
+  category: string;
 
   @ApiProperty()
   level: string;

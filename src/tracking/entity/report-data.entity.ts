@@ -3,32 +3,38 @@ import { ApiProperty } from '@nestjs/swagger';
 
 @Entity()
 export class ReportData {
-  @PrimaryGeneratedColumn('increment', { type: 'int' })
+  @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ length: 8 })
   @ApiProperty()
   type: string;
 
-  @Column()
+  @Column({ length: 255 })
   @ApiProperty()
   url: string;
 
-  @Column()
+  @Column({ length: 32 })
   @ApiProperty()
   title: string;
 
-  @Column()
+  @Column({
+    type: 'varchar',
+    length: 12,
+  })
   @ApiProperty()
   category: string;
 
-  @Column()
+  @Column({
+    type: 'varchar',
+    length: 8,
+  })
   @ApiProperty()
   level: string;
 
-  @Column()
+  @Column({ type: 'json' })
   @ApiProperty({
     description: '扩展字段',
   })
-  extends: string;
+  extends: Record<string, any>;
 }
