@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { EsService } from '../../lib/elasticsearch/elasticsearch.service';
+import { EsService } from '../../lib/es/es.service';
 
 @Injectable()
 export class EsDemoService {
@@ -9,8 +9,68 @@ export class EsDemoService {
   async add() {
     return await this.esService.bulk({
       body: [
-        { index: { _index: 'news', _id: '1' } },
-        { content: '模拟数据插入' },
+        {
+          index: {
+            _index:
+              'fed-monitor-20220702-performance-performance-resourcetiming',
+          },
+        },
+        {
+          data: {
+            subType: 'resourceTiming',
+            data: {
+              connectEnd: 103.89999997615814,
+              connectStart: 103.89999997615814,
+              decodedBodySize: 0,
+              domainLookupEnd: 103.89999997615814,
+              domainLookupStart: 103.89999997615814,
+              duration: 26.199999928474426,
+            },
+            category: 'performance',
+            type: 'performance',
+            level: 'low',
+            timestamp: 1656760459344,
+            errorId: 1628592578,
+            pageUrl: 'http://localhost:2021/JS/index.html',
+            pageTitle: 'native-js-demo',
+          },
+          clientInfo: JSON.stringify({
+            ip: '::1',
+            userAgent:
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36',
+          }),
+        },
+        {
+          index: {
+            _index:
+              'fed-monitor-20220702-performance-performance-resourcetiming',
+          },
+        },
+        {
+          data: {
+            subType: 'resourceTiming',
+            data: {
+              connectEnd: 103.89999997615814,
+              connectStart: 103.89999997615814,
+              decodedBodySize: 0,
+              domainLookupEnd: 103.89999997615814,
+              domainLookupStart: 103.89999997615814,
+              duration: 26.199999928474426,
+            },
+            category: 'performance',
+            type: 'performance',
+            level: 'low',
+            timestamp: 1656760459346,
+            errorId: -891367356,
+            pageUrl: 'http://localhost:2021/JS/index.html',
+            pageTitle: 'native-js-demo',
+          },
+          clientInfo: JSON.stringify({
+            ip: '::1',
+            userAgent:
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36',
+          }),
+        },
       ],
     });
   }

@@ -6,9 +6,10 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TrackingModule } from './tracking/tracking.module';
-import { EsModule } from './lib/elasticsearch/elasticsearch.module';
+import { EsModule } from './lib/es/es.module';
 import { EsDemoModule } from './demo/es/es.module';
 import { KafkaModule } from './demo/kafka/kafka.module';
+import { StableModule } from './management/monitor/stable/stable.module';
 
 import { AppController } from './app.controller';
 import { UsersController } from './users/users.controller';
@@ -48,6 +49,7 @@ import TypeOrmConfig from './common/configs/typeorm.config';
     EsModule,
     EsDemoModule,
     KafkaModule,
+    StableModule,
   ],
   controllers: [
     AppController,
