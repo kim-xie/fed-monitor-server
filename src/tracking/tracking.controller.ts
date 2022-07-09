@@ -33,7 +33,7 @@ export class TrackingController {
   })
   @HttpCode(HttpStatus.OK)
   report(@Body() reportrDto: ReportDto): Promise<void> {
-    return this.trackingService.report(reportrDto);
+    return this.trackingService.sendReport(reportrDto);
   }
 
   @Get('/all')
