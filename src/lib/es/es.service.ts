@@ -37,11 +37,17 @@ export class EsService {
    */
   private getEsIndex(params: any) {
     const {
+      apiKey = '',
       date = dayjs().format('YYYYMMDD'),
       category = '',
       type = '',
       subType = '',
     } = params;
+
+    if (!apiKey) {
+      this.logger.error('apiKey is required');
+      return;
+    }
 
     if (!category) {
       this.logger.error('category is required');
@@ -53,7 +59,7 @@ export class EsService {
       return;
     }
 
-    let index = `fed-monitor-${date}-${category.toLowerCase()}-${type.toLowerCase()}`;
+    let index = `fed-monitor-app${apiKey}-${date}-${category.toLowerCase()}-${type.toLowerCase()}`;
 
     if (subType) {
       index += `-${subType.toLowerCase()}`;
@@ -69,10 +75,11 @@ export class EsService {
   async tracking(data: any) {
     // 1、数据格式处理
     const { authInfo, clientInfo, reportInfo } = data;
-    // 解构数据
+    // 2、解构数据
     const dataList = reportInfo?.map((reportItem: any) => {
+      console.log('reportItem', reportItem);
       const { data, breadcrumb } = reportItem;
-      const index = this.getEsIndex(data);
+      const index = this.getEsIndex({ ...data, ...authInfo });
       this.logger.log('create index: ' + index);
       if (!index) {
         this.logger.error('index can not be empty index = ' + index);
@@ -167,19 +174,86 @@ export class EsService {
    * @returns
    */
   async searchBy(params: any) {
+    const timeFormat = 'YYYYMMDD';
     const {
-      date,
       category,
       type,
       subType = '*',
-      project,
+      level,
+      apiKey,
       apiEnv,
       pageNo,
       pageSize,
       source = [],
+      startTime = dayjs().format(timeFormat),
+      endTime = dayjs().format(timeFormat),
     } = params;
 
-    const index = this.getEsIndex({ date, category, type, subType });
+    console.log('------search params------', params);
+
+    let date: string | string[] = dayjs(endTime).format(timeFormat);
+    let index = [];
+
+    // 起始时间
+    if (startTime && endTime && startTime !== endTime) {
+      const day = dayjs(endTime).diff(startTime, 'day');
+      const dateArr = [];
+      for (let i = 0; i <= day; i++) {
+        dateArr.push(dayjs(startTime).add(i, 'day').format(timeFormat));
+      }
+      console.log('dateArr', dateArr);
+      date = dateArr;
+    }
+
+    if (type && Array.isArray(type)) {
+      if (date && Array.isArray(date)) {
+        index = date.map((item) => {
+          return type.map((ty) => {
+            const index = this.getEsIndex({
+              apiKey,
+              date: item,
+              category,
+              type: ty,
+              subType,
+            });
+            return index;
+          });
+        });
+      } else {
+        index = type.map((ty) => {
+          const index = this.getEsIndex({
+            apiKey,
+            date,
+            category,
+            type: ty,
+            subType,
+          });
+          return index;
+        });
+      }
+    } else {
+      if (date && Array.isArray(date)) {
+        index = date.map((item) => {
+          return this.getEsIndex({
+            apiKey,
+            date: item,
+            category,
+            type,
+            subType,
+          });
+        });
+      } else {
+        index = [
+          this.getEsIndex({
+            apiKey,
+            date,
+            category,
+            type,
+            subType,
+          }),
+        ];
+      }
+    }
 
     this.logger.log('search index: ' + index);
 
@@ -193,21 +267,22 @@ export class EsService {
       match_all: {},
     };
 
-    // 按项目查询
-    if (project && project !== 'all') {
-      query = {
-        match: {
-          'authInfo.apiKey.keyword': project,
-        },
-      };
-    }
-
     // 按项目环境查询
     if (apiEnv) {
       query = {
         match: {
           ...query.match,
           'authInfo.apiEnv.keyword': apiEnv,
+        },
+      };
+    }
+
+    // 按报错级别
+    if (level) {
+      query = {
+        match: {
+          ...query.match,
+          'data.level.keyword': level,
         },
       };
     }
@@ -223,6 +298,7 @@ export class EsService {
         size,
         _source: source,
       },
+      ignore_unavailable: 'true',
     });
 
     const resultObj = {

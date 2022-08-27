@@ -16,6 +16,14 @@ import { Browser } from './entity/browser.entity';
 import { Device } from './entity/device.entity';
 import { OperationSystem } from './entity/os.entity';
 
+import {
+  SubscribeTo,
+  SubscribeToFixedGroup,
+} from '../common/kafka/kafka.decorator';
+import { KafkaService } from '../common/kafka/kafka.service';
+import { KafkaPayload } from '../common/kafka/kafka.message';
+// import { REPORT_FIXED_TOPIC } from '../common/constants';
+
 function filter({ id, ...params }: Record<string, any> = {}) {
   return params;
 }
@@ -25,20 +33,29 @@ export class TrackingService {
   constructor(
     @InjectRepository(Report)
     private readonly reportRepository: Repository<Report>,
-    // @InjectRepository(ReportBreadcrumb)
-    // private readonly reportBreadcrumbRepository: Repository<ReportBreadcrumb>,
-    // @InjectRepository(ReportData)
-    // private readonly reportDataRepository: Repository<ReportData>,
-    // @InjectRepository(ReportSdk)
-    // private readonly reportSdkRepository: Repository<ReportSdk>,
-    // @InjectRepository(Browser)
-    // private readonly browserRepository: Repository<Browser>,
-    // @InjectRepository(Device)
-    // private readonly deviceRepository: Repository<Device>,
-    // @InjectRepository(OperationSystem)
-    // private readonly osRepository: Repository<OperationSystem>,
     private readonly connection: Connection,
+    private readonly kafka: KafkaService,
   ) {}
+
+  async sendReport(createReportDto: ReportDto): Promise<any> {
+    const payload: KafkaPayload = {
+      messageId: '' + new Date().valueOf(),
+      body: createReportDto,
+      messageType: 'Report',
+      topicName: 'tracking.report',
+    };
+    const value = await this.kafka.sendMessage('tracking.report', payload);
+    console.log('kafka status ', value);
+    return createReportDto;
+  }
+  /**
+   * When group id is unique for every container.
+   * @param payload
+   */
+  @SubscribeTo('tracking.report')
+  reportSubscriber(payload: KafkaPayload) {
+    console.log('[KAKFA-CONSUMER] Print message after receiving', payload);
+  }
 
   async report(createReportDto: ReportDto): Promise<any> {
     // this.connection.transaction((manager) => {
