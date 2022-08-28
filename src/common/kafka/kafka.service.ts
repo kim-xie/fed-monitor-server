@@ -42,7 +42,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
     });
 
     await this.fixedConsumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
+      eachMessage: async ({ topic, message }) => {
         const functionRef = SUBSCRIBER_FIXED_FN_REF_MAP.get(topic);
         const object = SUBSCRIBER_OBJ_REF_MAP.get(topic);
         // bind the subscribed functions to topic
@@ -51,7 +51,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
     });
 
     await this.consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
+      eachMessage: async ({ topic, message }) => {
         const functionRef = SUBSCRIBER_FN_REF_MAP.get(topic);
         const object = SUBSCRIBER_OBJ_REF_MAP.get(topic);
         // bind the subscribed functions to topic

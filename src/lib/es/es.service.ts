@@ -8,6 +8,7 @@ import * as dayjs from 'dayjs';
 @Injectable()
 export class EsService {
   private readonly logger: Logger = new Logger();
+  private readonly esPrefix = 'fed-monitor';
   constructor(private readonly esService: ElasticsearchService) {}
 
   // 获取es服务
@@ -59,7 +60,9 @@ export class EsService {
       return;
     }
 
-    let index = `fed-monitor-app${apiKey}-${date}-${category.toLowerCase()}-${type.toLowerCase()}`;
+    let index = `${
+      this.esPrefix
+    }-app${apiKey}-${date}-${category.toLowerCase()}-${type.toLowerCase()}`;
 
     if (subType) {
       index += `-${subType.toLowerCase()}`;
@@ -187,6 +190,7 @@ export class EsService {
       source = [],
       startTime = dayjs().format(timeFormat),
       endTime = dayjs().format(timeFormat),
+      ...rest
     } = params;
 
     console.log('------search params------', params);
@@ -262,43 +266,20 @@ export class EsService {
       return;
     }
 
-    // 默认查询所有
-    let query: any = {
-      match_all: {},
-    };
-
-    // 按项目环境查询
-    if (apiEnv) {
-      query = {
-        match: {
-          ...query.match,
-          'authInfo.apiEnv.keyword': apiEnv,
-        },
-      };
-    }
-
-    // 按报错级别
-    if (level) {
-      query = {
-        match: {
-          ...query.match,
-          'data.level.keyword': level,
-        },
-      };
-    }
-
     const from = pageNo > 0 ? pageNo - 1 : 0;
     const size = pageSize || 10;
 
+    const body = this.assembleSearchBody(rest);
+
     const searchDatas: any = await this.search({
       index,
-      body: {
-        query,
-        from,
-        size,
-        _source: source,
-      },
-      ignore_unavailable: 'true',
+      body,
+      from,
+      size,
+      _source: source,
+      sort: 'data.timestamp:desc',
+      ignore_unavailable: true,
+      allow_no_indices: true,
     });
 
     const resultObj = {
@@ -311,6 +292,61 @@ export class EsService {
     this.logger.log('search result: ' + JSON.stringify(resultObj));
 
     return resultObj;
+  }
+
+  /**
+   * 组装查询数据
+   * @param searchParams
+   * @returns
+   */
+  assembleSearchBody(searchParams: Record<string, any>) {
+    const keys = Object.keys(searchParams);
+    if (!keys.length) {
+      return {};
+    }
+
+    const queryKeysList = [
+      'apiEnv',
+      'request.url',
+      'response.status',
+      'response.errorCode',
+      'response.data',
+      'userId',
+      'pageUrl',
+      'level',
+    ];
+
+    const body = {
+      query: {
+        bool: {
+          must: [],
+        },
+      },
+    };
+
+    if (searchParams?.apiKey) {
+      body.query.bool.must.push({
+        match_phrase: {
+          'authInfo.apiKey.keyword': searchParams.apiKey,
+        },
+      });
+    }
+
+    keys.forEach((key: string) => {
+      if (searchParams[key] && queryKeysList.includes(key)) {
+        body.query.bool.must.push({
+          match_phrase: {
+            [['apiEnv', 'userId'].includes(key)
+              ? `authInfo.${key}.keyword`
+              : key === 'ip'
+              ? `clientInfo.${key}`
+              : `data.${key}`]: searchParams[key],
+          },
+        });
+      }
+    });
+
+    return body;
   }
 
   // 查询数量
