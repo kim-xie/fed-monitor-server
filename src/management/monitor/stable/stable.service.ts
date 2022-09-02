@@ -267,8 +267,9 @@ export class StableService {
     if (typeof interval === 'string') {
       const reg = /^(?<num>\d+)(?<util>[a-zA-Z])$/;
       const { num, util } = interval.match(reg).groups;
-      if (num && util) {
-        interval_value = msofUtil(util as IDateUtil) * Number(num);
+      const ms = msofUtil(util as IDateUtil);
+      if (num && ms) {
+        interval_value = ms * Number(num);
       }
     }
 
