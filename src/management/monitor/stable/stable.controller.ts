@@ -30,6 +30,30 @@ export class StableController {
   }
 
   /**
+   * 获取http统计面板数据
+   * @param query
+   * @returns
+   */
+  @Get('httpStatic')
+  @ApiOperation({ summary: 'httpStatic' })
+  @HttpCode(HttpStatus.OK)
+  async getHttpStatics(@Query() query) {
+    return await this.stableService.getHttpStatics(query);
+  }
+
+  /**
+   * 获取http时间粒度数据
+   * @param query
+   * @returns
+   */
+  @Get('httpChangeDateInterval')
+  @ApiOperation({ summary: 'httpChangeDateInterval' })
+  @HttpCode(HttpStatus.OK)
+  async getHttpChangeDateInterval(@Query() query) {
+    return await this.stableService.getHttpHistogram(query);
+  }
+
+  /**
    * 模拟SDK数据上报
    * @param msg
    * @param headers

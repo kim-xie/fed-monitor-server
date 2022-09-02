@@ -1,34 +1,126 @@
-import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { Injectable, Logger } from '@nestjs/common';
+import { EsBaseService } from './service/esbase';
+import { EsAggsService } from './service/esaggs';
+import { EsHistogramService } from './service/eshistogram';
+import { EsScriptService } from './service/esscript';
 import * as dayjs from 'dayjs';
 
 /**
- * es api: https://www.elastic.co/guide/en/elasticsearch/reference/8.2/docs.html
+ * es api:
+ * https://www.elastic.co/guide/en/elasticsearch/reference/8.2/docs.html
  */
 @Injectable()
 export class EsService {
   private readonly logger: Logger = new Logger();
   private readonly esPrefix = 'fed-monitor';
-  constructor(private readonly esService: ElasticsearchService) {}
+  constructor(
+    private readonly esBaseService: EsBaseService,
+    private readonly esAggsService: EsAggsService,
+    private readonly esHistogramService: EsHistogramService,
+    private readonly esScriptService: EsScriptService,
+  ) {}
 
   // 获取es服务
   getEsClient() {
-    return this.esService;
+    return this.esBaseService;
+  }
+
+  // 添加
+  async create(params: any) {
+    return await this.esBaseService.create(params);
+  }
+
+  // 更新
+  async update(params: any) {
+    return await this.esBaseService.update(params);
+  }
+
+  // 删除
+  async delete(params: any) {
+    return await this.esBaseService.delete(params);
   }
 
   // 添加、修改、删除数据
   async bulk(params: any) {
-    return await this.esService.bulk(params);
+    return await this.esBaseService.bulk(params);
   }
 
   // 查询数据
   async search(params: any) {
-    return await this.esService.search(params);
+    return await this.esBaseService.search(params);
+  }
+
+  // 批查询
+  async msearch(params: any) {
+    return await this.esBaseService.msearch(params);
+  }
+
+  // 查询精准数据
+  async get(params: any) {
+    return await this.esBaseService.get(params);
+  }
+
+  // 批操作
+  async mget(params: any) {
+    return await this.esBaseService.mget(params);
   }
 
   // 查询数量
   async count(params: any) {
-    return await this.esService.count(params);
+    return await this.esBaseService.count(params);
+  }
+
+  // 分桶聚合操作
+  async bucketAggs(params: any) {
+    return await this.esAggsService.bucketAggs(params);
+  }
+
+  // 指标聚合操作
+  async metricsAggs(params: any) {
+    return await this.esAggsService.metricsAggs(params);
+  }
+
+  // 管道聚合操作
+  async pipelineAggs(params: any) {
+    return await this.esAggsService.pipelineAggs(params);
+  }
+
+  // 直方图表数据查询操作
+  async histogram(params: any) {
+    return await this.esHistogramService.histogram(params);
+  }
+
+  // 日期直方图表数据查询操作
+  async dateHistogram(params: any) {
+    return await this.esHistogramService.dateHistogram(params);
+  }
+
+  // 百分比图表数据查询操作
+  async percentile(params: any) {
+    return await this.esHistogramService.percentile(params);
+  }
+
+  // 自定义脚本查询
+  async script(params: any) {
+    return await this.esScriptService.script(params);
+  }
+
+  /**
+   * 字段转keyword
+   * @param field
+   * @returns
+   */
+  fieldToKeyWord(field: string) {
+    return this.esBaseService.fieldToKeyWord(field);
+  }
+
+  /**
+   * keyword to field
+   * @param field
+   * @returns
+   */
+  keyWordToField(field: string) {
+    return this.esBaseService.keyWordToField(field);
   }
 
   /**
@@ -36,7 +128,7 @@ export class EsService {
    * @param params
    * @returns
    */
-  private getEsIndex(params: any) {
+  getEsIndex(params: any) {
     const {
       apiKey = '',
       date = dayjs().format('YYYYMMDD'),
@@ -150,28 +242,6 @@ export class EsService {
   }
 
   /**
-   * 删除数据
-   * @param params
-   * @returns
-   */
-  async delete(params: any) {
-    console.log('delete params', params);
-    const { date, category, type, subType } = params;
-    const index = this.getEsIndex({ date, category, type, subType });
-    if (!index) {
-      this.logger.error('index can not be empty index = ' + index);
-      return;
-    }
-    return await this.bulk({
-      body: [
-        {
-          delete: { _index: index },
-        },
-      ],
-    });
-  }
-
-  /**
    * 分页查询
    * @param params
    * @returns
@@ -182,9 +252,7 @@ export class EsService {
       category,
       type,
       subType = '*',
-      level,
       apiKey,
-      apiEnv,
       pageNo,
       pageSize,
       source = [],
@@ -295,7 +363,7 @@ export class EsService {
   }
 
   /**
-   * 组装查询数据
+   * 组装查询参数
    * @param searchParams
    * @returns
    */
