@@ -1,14 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Headers,
-  HttpCode,
-  HttpStatus,
-  Ip,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { StableService } from './stable.service';
 
@@ -51,33 +41,5 @@ export class StableController {
   @HttpCode(HttpStatus.OK)
   async getHttpChangeDateInterval(@Query() query) {
     return await this.stableService.getHttpHistogram(query);
-  }
-
-  /**
-   * 模拟SDK数据上报
-   * @param msg
-   * @param headers
-   * @param ip
-   * @returns
-   */
-  @Post('tracking')
-  @ApiOperation({ summary: 'tracking' })
-  @HttpCode(HttpStatus.OK)
-  async tracking(@Body() msg: any, @Headers() headers, @Ip() ip) {
-    const contentType: string = headers['content-type'];
-    const clientInfo = { ip, userAgent: headers['user-agent'] };
-    /**
-     * 1、支持sendbeacon、xhr、image这三种上报方式
-     */
-    if (contentType?.startsWith('application/json')) {
-      // xhr
-      msg.clientInfo = clientInfo;
-      return await this.stableService.handleReportData(msg);
-    } else {
-      // sendBeacon
-      const message = JSON.parse(msg);
-      message.clientInfo = clientInfo;
-      return await this.stableService.handleReportData(message);
-    }
   }
 }

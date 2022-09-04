@@ -14,10 +14,16 @@ import { UsersController } from './users/users.controller';
 import { TrackingController } from './tracking/tracking.controller';
 import { AppService } from './app.service';
 
+import { ConfigModule } from '@nestjs/config';
 import TypeOrmConfig from './common/configs/typeorm.config';
+import HttpConfig from './common/configs/http.config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      load: [HttpConfig],
+      isGlobal: true,
+    }),
     TypeOrmModule.forRoot(TypeOrmConfig),
     KafkaModule.register({
       clientId: 'fed-monitor-kafka',

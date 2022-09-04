@@ -9,6 +9,8 @@ import { HttpExceptionFilter } from './common/filters/http-exception';
 import { AllExceptionsFilter } from './common/filters/all-exception';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { logger } from './common/middlewares/logger-middleware';
+import { ConfigService } from '@nestjs/config';
+import * as bodyParser from 'body-parser';
 
 // import helmet from 'helmet';
 // import csurf from 'csurf';
@@ -30,6 +32,14 @@ function useSwagger(app: INestApplication) {
 async function bootstrap() {
   // 创建实例
   const app = await NestFactory.create(AppModule, { logger });
+
+  // 读取配置
+  const configService = app.get(ConfigService);
+  const limit = configService.get<string>('http.request.body.limit');
+
+  // 报文限制
+  app.use(bodyParser.text({ limit }));
+  app.use(bodyParser.json({ limit }));
 
   //cors：跨域资源共享
   app.enableCors({

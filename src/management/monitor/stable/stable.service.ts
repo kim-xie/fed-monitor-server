@@ -4,7 +4,7 @@ import dayjs, { msofUtil, IDateUtil } from 'src/utils/dateUtil';
 
 @Injectable()
 export class StableService {
-  private readonly logger: Logger = new Logger();
+  private readonly logger: Logger = new Logger(StableService.name);
   constructor(private readonly esService: EsService) {}
 
   /**
@@ -465,15 +465,5 @@ export class StableService {
     };
 
     return resultParse(result);
-  };
-
-  // 模拟数据上报
-  handleReportData = async (data: any) => {
-    try {
-      const result = await this.esService.tracking(data);
-      return result;
-    } catch (error) {
-      this.logger.error('handleReportData is error: ' + error);
-    }
   };
 }

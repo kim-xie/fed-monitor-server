@@ -1,42 +1,24 @@
-import { Injectable } from '@nestjs/common';
-
-import { InjectRepository } from '@nestjs/typeorm';
-import { Connection, EntityManager, Repository } from 'typeorm';
-
+import { Injectable, Logger } from '@nestjs/common';
 import { ReportDto } from './dto/report.dto';
-import { ReportBreadcrumbDto } from './dto/report-breadcrumb.dto';
-import { ReportDataDto } from './dto/report-data.dto';
-import { ReportSdkDto } from './dto/report-sdk.dto';
-
-import { Report } from './entity/report.entity';
-import { ReportBreadcrumb } from './entity/report-breadcrumb.entity';
-import { ReportData } from './entity/report-data.entity';
-import { ReportSdk } from './entity/report-sdk.entity';
-import { Browser } from './entity/browser.entity';
-import { Device } from './entity/device.entity';
-import { OperationSystem } from './entity/os.entity';
-
-import {
-  SubscribeTo,
-  SubscribeToFixedGroup,
-} from '../common/kafka/kafka.decorator';
+import { EsService } from 'src/lib/es/es.service';
+import { SubscribeTo } from '../common/kafka/kafka.decorator';
 import { KafkaService } from '../common/kafka/kafka.service';
 import { KafkaPayload } from '../common/kafka/kafka.message';
 // import { REPORT_FIXED_TOPIC } from '../common/constants';
 
-function filter({ id, ...params }: Record<string, any> = {}) {
-  return params;
-}
-
 @Injectable()
 export class TrackingService {
+  private readonly logger: Logger = new Logger(TrackingService.name);
   constructor(
-    @InjectRepository(Report)
-    private readonly reportRepository: Repository<Report>,
-    private readonly connection: Connection,
     private readonly kafka: KafkaService,
+    private readonly esService: EsService,
   ) {}
 
+  /**
+   * kafka 生产者
+   * @param createReportDto
+   * @returns
+   */
   async sendReport(createReportDto: ReportDto): Promise<any> {
     const payload: KafkaPayload = {
       messageId: '' + new Date().valueOf(),
@@ -45,166 +27,93 @@ export class TrackingService {
       topicName: 'tracking.report',
     };
     const value = await this.kafka.sendMessage('tracking.report', payload);
-    console.log('kafka status ', value);
+    this.logger.log('kafka status ', value);
     return createReportDto;
   }
   /**
-   * When group id is unique for every container.
+   * Kafka消费者
    * @param payload
    */
   @SubscribeTo('tracking.report')
   reportSubscriber(payload: KafkaPayload) {
-    console.log('[KAKFA-CONSUMER] Print message after receiving', payload);
+    this.logger.log('[KAKFA-CONSUMER] Print message after receiving', payload);
+    this.tracking(payload);
   }
 
-  async report(createReportDto: ReportDto): Promise<any> {
-    // this.connection.transaction((manager) => {
+  /**
+   * SDK上报数据持久化(消费kafka数据)
+   * @param data
+   */
+  async tracking(data: any) {
+    // 1、数据格式处理
+    const { authInfo, clientInfo, reportInfo } = data;
+    // 2、解构数据
+    const dataList = reportInfo?.map((reportItem: any) => {
+      const { data, breadcrumb } = reportItem;
+      const index = this.esService.getEsIndex({ ...data, ...authInfo });
+      this.logger.log('create index: ' + index);
+      if (!index) {
+        this.logger.error('index can not be empty index = ' + index);
+        return;
+      }
 
-    // });
-    const runner = this.connection.createQueryRunner();
-    await runner.connect();
-    await runner.startTransaction();
+      if (breadcrumb?.length) {
+        breadcrumb.forEach((item: any) => {
+          item.data = JSON.stringify(item.data);
+        });
+      }
 
-    try {
-      const breadcrumb = await Promise.all(
-        createReportDto.breadcrumb.map((item) =>
-          this.saveBreadcrumb(item, runner.manager),
-        ),
-      );
-      const data = await this.saveData(createReportDto.data, runner.manager);
-      const sdk = await Promise.all(
-        createReportDto.sdk.map((item) => this.saveSdk(item, runner.manager)),
-      );
-      const browser = await this.preloadBrowserByContent(
-        createReportDto.browser,
-        runner.manager,
-      );
-      const device = await this.preloadDeviceByContent(
-        createReportDto.device,
-        runner.manager,
-      );
-      const os = await this.preloadOSByContent(
-        createReportDto.os,
-        runner.manager,
-      );
-
-      const report = Object.assign(new Report(), createReportDto, {
-        breadcrumb,
-        data,
-        sdk,
-        browser,
-        device,
-        os,
-      });
-      await runner.manager.save(report);
-      await runner.commitTransaction();
-    } catch (error) {
-      await runner.rollbackTransaction();
-      throw new SyntaxError(error);
-    }
-  }
-
-  async findAll(): Promise<any> {
-    const result = await this.reportRepository.find({
-      relations: ['breadcrumb', 'data', 'sdk', 'device', 'browser', 'os'],
-      loadRelationIds: false,
+      return {
+        index,
+        doc: {
+          ...reportItem,
+          authInfo,
+          clientInfo,
+        },
+      };
     });
 
-    return result.map(
-      ({ device, browser, os, breadcrumb, data, sdk, ...rest }) => {
-        return {
-          ...filter(rest),
-          device: device?.content || '',
-          browser: browser?.content || '',
-          os: os?.content || '',
-          breadcrumb: breadcrumb.map(filter),
-          sdk: sdk.map(filter),
-          data: filter(data),
-        };
+    // 数据扁平化
+    const body = dataList?.flatMap(({ index, doc }) => [
+      {
+        index: { _index: index },
       },
-    );
-  }
+      { ...doc },
+    ]);
 
-  async findOne(traceId: string): Promise<any> {
-    const { device, browser, os, breadcrumb, data, sdk, ...rest } =
-      await this.reportRepository.findOne({
-        relations: ['breadcrumb', 'data', 'sdk', 'device', 'browser', 'os'],
-        loadRelationIds: false,
-        where: { traceId },
-      });
-
-    return {
-      ...filter(rest),
-      device: device?.content || '',
-      browser: browser?.content || '',
-      os: os?.content || '',
-      breadcrumb: breadcrumb?.map(filter),
-      sdk: sdk?.map(filter),
-      data: filter(data),
-    };
-  }
-
-  private async saveBreadcrumb(
-    createBreadbrumbDto: ReportBreadcrumbDto,
-    manager: EntityManager,
-  ) {
-    const breadcrumb = new ReportBreadcrumb();
-    Object.assign(breadcrumb, createBreadbrumbDto);
-    await manager.save(breadcrumb);
-    return breadcrumb;
-  }
-
-  private async saveData(createDataDto: ReportDataDto, manager: EntityManager) {
-    const data = new ReportData();
-    Object.assign(data, createDataDto);
-    await manager.save(data);
-    return data;
-  }
-
-  private async saveSdk(createSdkDto: ReportSdkDto, manager: EntityManager) {
-    const sdk = new ReportSdk();
-    Object.assign(sdk, createSdkDto);
-    await manager.save(sdk);
-    return sdk;
-  }
-
-  private async preloadBrowserByContent(
-    content: string,
-    manager: EntityManager,
-  ) {
-    let browser = await manager.findOne(Browser, {
-      where: { content },
-    });
-    if (!browser) {
-      browser = new Browser();
-      browser.content = content;
-      await manager.save(browser);
+    // 2、数据批量入库
+    try {
+      const bulkResponse = await this.esService.bulk({ body });
+      // 3、异常处理
+      if (bulkResponse.errors) {
+        const erroredDocuments = [];
+        // The items array has the same order of the dataset we just indexed.
+        // The presence of the `error` key indicates that the operation
+        // that we did for the document has failed.
+        bulkResponse.items.forEach((action) => {
+          const operation = Object.keys(action)[0];
+          if (action[operation].error) {
+            const { status, error } = action[operation];
+            erroredDocuments.push({
+              // If the status is 429 it means that you can retry the document,
+              // otherwise it's very likely a mapping error, and you should
+              // fix the document before to try it again.
+              status,
+              error,
+              // operation: body[i * 2],
+              // document: body[i * 2 + 1],
+            });
+          }
+        });
+        this.logger.log(
+          'bulk operate erroredDocuments= ' + JSON.stringify(erroredDocuments),
+        );
+        return false;
+      }
+    } catch (err) {
+      this.logger.error('bulk operate is error:' + err);
+      return false;
     }
-    return browser;
-  }
-
-  private async preloadDeviceByContent(
-    content: string,
-    manager: EntityManager,
-  ) {
-    let device = await manager.findOne(Device, { where: { content } });
-    if (!device) {
-      device = new Device();
-      device.content = content;
-      await manager.save(device);
-    }
-    return device;
-  }
-
-  private async preloadOSByContent(content: string, manager: EntityManager) {
-    let os = await manager.findOne(OperationSystem, {
-      where: { content },
-    });
-    if (!os) {
-      os = new OperationSystem();
-      os.content = content;
-      await manager.save(os);
-    }
-    return os;
+    return true;
   }
 }

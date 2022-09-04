@@ -12,4 +12,7 @@ export class ReportBreadcrumbDto {
 
   @ApiProperty()
   level: string;
+
+  @ApiProperty()
+  time: number;
 }

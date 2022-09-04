@@ -1,12 +1,18 @@
 import {
   Body,
   Controller,
-  Get,
   HttpCode,
   HttpStatus,
-  Param,
   Post,
+  Get,
+  Query,
+  Res,
+  Headers,
+  Ip,
+  Logger,
 } from '@nestjs/common';
+import { Response } from 'express';
+import { join } from 'path';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -16,45 +22,76 @@ import {
 
 import { TrackingService } from './tracking.service';
 
-import { ReportDto } from './dto/report.dto';
-import { Report } from './entity/report.entity';
+import { ClientInfoDto } from './dto/report-clientInfo.dto';
 
 @ApiBearerAuth()
 @ApiTags('tracking')
 @Controller('tracking')
 export class TrackingController {
+  private readonly logger: Logger = new Logger(TrackingController.name);
   constructor(private readonly trackingService: TrackingService) {}
 
-  @Post('report')
+  @Post()
   @ApiOperation({ summary: 'Upload report' })
   @ApiResponse({
     status: 200,
     description: 'upload report success',
   })
   @HttpCode(HttpStatus.OK)
-  report(@Body() reportrDto: ReportDto): Promise<void> {
-    return this.trackingService.sendReport(reportrDto);
+  report(@Body() reportrDto: any, @Headers() headers, @Ip() ip): Promise<void> {
+    const contentType: string = headers['content-type'];
+    const clientInfo: ClientInfoDto = {
+      ip,
+      userAgent: headers['user-agent'],
+      trackTime: Date.now(),
+      uploadMode: contentType?.startsWith('application/json')
+        ? 'xhr'
+        : 'sendBeacon',
+    };
+    /**
+     * 1、支持sendBeacon、xhr、img这三种上报方式
+     */
+    let sendMessage = reportrDto;
+    if (contentType?.startsWith('application/json')) {
+      // xhr
+      sendMessage.clientInfo = clientInfo;
+      this.logger.log('track by xhr: ', sendMessage);
+    } else {
+      // sendBeacon
+      sendMessage = sendMessage && JSON.parse(sendMessage.toString());
+      sendMessage.clientInfo = clientInfo;
+      this.logger.log('track by sendBeacon: ', sendMessage);
+    }
+    return this.trackingService.sendReport(sendMessage);
   }
 
-  @Get('/all')
-  @ApiOperation({ summary: 'Find all reports' })
+  @Get()
+  @ApiOperation({ summary: 'Upload report' })
   @ApiResponse({
     status: 200,
-    description: 'The found reports',
+    description: 'upload report success',
   })
   @HttpCode(HttpStatus.OK)
-  findAll(): Promise<Report[]> {
-    return this.trackingService.findAll();
-  }
-
-  @Get(':traceId')
-  @ApiOperation({ summary: 'Find user' })
-  @ApiResponse({
-    status: 200,
-    description: 'The founded report.',
-  })
-  @HttpCode(HttpStatus.OK)
-  findOne(@Param('traceId') traceId: string): Promise<Report> {
-    return this.trackingService.findOne(traceId);
+  imgReport(
+    @Query() reportrDto: any,
+    @Res() res: Response,
+    @Headers() headers,
+    @Ip() ip,
+  ) {
+    const clientInfo: ClientInfoDto = {
+      ip,
+      userAgent: headers['user-agent'],
+      trackTime: Date.now(),
+      uploadMode: 'img',
+    };
+    /**
+     * 1、image上报方式
+     */
+    const sendMessage = JSON.parse(reportrDto?.data);
+    sendMessage.clientInfo = clientInfo;
+    this.logger.log('track by img: ', sendMessage);
+    this.trackingService.sendReport(sendMessage);
+    const imgPath = join(__dirname, '../../static/img/tracker.gif');
+    res.sendFile(imgPath);
   }
 }

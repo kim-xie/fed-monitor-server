@@ -1,37 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { ReportBreadcrumbDto } from './report-breadcrumb.dto';
-import { ReportDataDto } from './report-data.dto';
-import { ReportSdkDto } from './report-sdk.dto';
+import { ClientInfoDto } from './report-clientInfo.dto';
+import { ReportInfoDto } from './report-reportInfo.dto';
+import { ReportAuthInfoDto } from './report-authInfo.dto';
 
 export class ReportDto {
   @ApiProperty()
-  breadcrumb: ReportBreadcrumbDto[];
+  reportInfo: ReportInfoDto[];
 
   @ApiProperty()
-  data: ReportDataDto;
+  authInfo: ReportAuthInfoDto;
 
   @ApiProperty()
-  sdk: ReportSdkDto[];
+  clientInfo?: ClientInfoDto;
 
   @ApiProperty()
-  apiKey: string;
-
-  @ApiProperty()
-  apiEnv: string;
-
-  @ApiProperty()
-  traceId: string;
-
-  @ApiProperty()
-  ip: string;
-
-  @ApiProperty()
-  browser: string;
-
-  @ApiProperty()
-  device: string;
-
-  @ApiProperty()
-  os: string;
+  deviceInfo?: any;
 }
