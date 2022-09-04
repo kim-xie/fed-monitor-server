@@ -3,7 +3,7 @@ import { EsBaseService } from './service/esbase';
 import { EsAggsService } from './service/esaggs';
 import { EsHistogramService } from './service/eshistogram';
 import { EsScriptService } from './service/esscript';
-import * as dayjs from 'dayjs';
+import dayjs from 'src/utils/dateUtil';
 
 /**
  * es api:
@@ -263,7 +263,7 @@ export class EsService {
 
     console.log('------search params------', params);
 
-    let date: string | string[] = dayjs(endTime).format(timeFormat);
+    let date: string | string[] = endTime;
     let index = [];
 
     // 起始时间

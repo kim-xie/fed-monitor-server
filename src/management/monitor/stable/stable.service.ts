@@ -122,22 +122,22 @@ export class StableService {
     const body = {
       size: 0,
       aggs: {
-        url_count: {
+        error_count: {
           value_count: {
             field: 'data.request.url.keyword',
           },
         },
-        url_spend_avg_time: {
+        url_avg_time: {
           avg: {
             field: 'data.spendTime',
           },
         },
-        url_total: {
+        url_count: {
           cardinality: {
             field: 'data.request.url.keyword',
           },
         },
-        page_total: {
+        page_count: {
           cardinality: {
             field: 'data.pageUrl.keyword',
           },
@@ -155,7 +155,7 @@ export class StableService {
       const data = result?.aggregations || {};
       const newResult = {};
       Object.keys(data).forEach((key) => {
-        newResult[key] = data[key].value;
+        newResult[key] = Number(data[key].value?.toFixed(0));
       });
       return newResult;
     };
@@ -187,6 +187,11 @@ export class StableService {
       },
       size: 0,
       aggs: {
+        http_status_count: {
+          value_count: {
+            field: 'data.response.status',
+          },
+        },
         http_status: {
           terms: {
             field: 'data.response.status',
@@ -213,6 +218,11 @@ export class StableService {
       },
       size: 0,
       aggs: {
+        biz_status_count: {
+          value_count: {
+            field: 'data.response.errorCode',
+          },
+        },
         biz_status: {
           terms: {
             field: 'data.response.errorCode',
@@ -241,10 +251,14 @@ export class StableService {
         result.forEach((item: any) => {
           const aggregations = item?.aggregations;
           Object.keys(aggregations).forEach((key) => {
-            statusObj[key] = aggregations[key].buckets?.map((bucket) => ({
-              code: bucket.key,
-              count: bucket.doc_count,
-            }));
+            if (aggregations[key]?.buckets) {
+              statusObj[key] = aggregations[key].buckets?.map((bucket) => ({
+                code: bucket.key,
+                count: bucket.doc_count,
+              }));
+            } else {
+              statusObj[key] = aggregations[key]?.value;
+            }
           });
         });
         return statusObj;
@@ -293,7 +307,7 @@ export class StableService {
       },
       size: 0,
       aggs: {
-        date_total: {
+        aggs_date: {
           histogram: {
             field: 'data.timestamp',
             interval: interval_value, // 时间粒度
@@ -316,8 +330,8 @@ export class StableService {
 
     // 结果解析
     const resultParse = (result: any) => {
-      if (result?.aggregations?.date_total) {
-        const { buckets = [] } = result.aggregations.date_total;
+      if (result?.aggregations?.aggs_date) {
+        const { buckets = [] } = result.aggregations.aggs_date;
         const date_list = buckets.map((item: any) => ({
           date: dayjs(item.key).format(
             interval.includes('d') ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm',
