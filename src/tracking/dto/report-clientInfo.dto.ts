@@ -12,4 +12,13 @@ export class ClientInfoDto {
 
   @ApiProperty()
   uploadMode: string;
+
+  @ApiProperty()
+  origin: string;
+
+  @ApiProperty()
+  referer: string;
+
+  @ApiProperty()
+  cookie: string;
 }

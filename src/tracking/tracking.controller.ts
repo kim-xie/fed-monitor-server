@@ -39,9 +39,13 @@ export class TrackingController {
   })
   @HttpCode(HttpStatus.OK)
   report(@Body() reportrDto: any, @Headers() headers, @Ip() ip): Promise<void> {
+    console.log('headers', headers);
     const contentType: string = headers['content-type'];
     const clientInfo: ClientInfoDto = {
       ip,
+      origin: headers['origin'],
+      referer: headers['referer'],
+      cookie: headers['cookie'],
       userAgent: headers['user-agent'],
       trackTime: Date.now(),
       uploadMode: contentType?.startsWith('application/json')
@@ -80,6 +84,9 @@ export class TrackingController {
   ) {
     const clientInfo: ClientInfoDto = {
       ip,
+      origin: headers['origin'],
+      referer: headers['referer'],
+      cookie: headers['cookie'],
       userAgent: headers['user-agent'],
       trackTime: Date.now(),
       uploadMode: 'img',
