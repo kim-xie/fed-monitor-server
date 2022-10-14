@@ -101,4 +101,15 @@ export class TrackingController {
     const imgPath = join(__dirname, '../../static/img/tracker.gif');
     res.sendFile(imgPath);
   }
+
+  @Get('/timeCheck')
+  @ApiOperation({ summary: 'timeCheck' })
+  @ApiResponse({
+    status: 200,
+    description: 'timeCheck success',
+  })
+  @HttpCode(HttpStatus.OK)
+  timeCheck(@Res() res: Response) {
+    res.send({ serverTime: Date.now() });
+  }
 }
